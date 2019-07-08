@@ -38,8 +38,10 @@ The Service machine has many components that need to make network calls, as foll
 SSH into the Services machine and run the following code snippet with your proxy address. If you run in Amazon's EC2 service then you'll need to include `169.254.169.254` EC2 services as shown below.
 
 ```
-1.) echo '{"HttpProxy": "http://<proxy-ip:port>"}' | sudo tee  /etc/replicated.conf
-2.) (cat <<'EOF'
+# 1.) instruct replicated to use proxy for pulling down containers
+echo '{"HttpProxy": "http://<proxy-ip:port>"}' | sudo tee  /etc/replicated.conf
+# 2.) instruct all CircleCI containers to use proxy for their communications
+(cat <<'EOF'
 HTTP_PROXY=<proxy-ip:port>
 HTTPS_PROXY=<proxy-ip:port>
 NO_PROXY=169.254.169.254,<circleci-service-ip>,127.0.0.1,localhost,ghe.example.com
@@ -47,7 +49,8 @@ JVM_OPTS="-Dhttp.proxyHost=<ip> -Dhttp.proxyPort=<port> -Dhttps.proxyHost=<proxy
 
 EOF
 ) | sudo tee -a /etc/circle-installation-customizations
-3.) sudo service replicated-ui stop; sudo service replicated stop; sudo service replicated-operator stop; sudo service replicated-ui start; sudo service replicated-operator start; sudo service replicated start
+# 3.) Restart replicated to pick up changes
+sudo service replicated-ui stop; sudo service replicated stop; sudo service replicated-operator stop; sudo service replicated-ui start; sudo service replicated-operator start; sudo service replicated start
 ```
 
 **Note:** The above is not handled by by our enterprise-setup script and will need to be added to the user data for the services box startup or done manually. 
@@ -61,28 +64,29 @@ Also note that when the instructions ask you if you use a proxy, they will also 
 If you cannot access the page of the CircleCI Replicated management console, but the services machine seems to be running, try to SSH tunnel into the machine doing the following: `ssh -L 8800:<address you want to proxy through>:8800 ubuntu@<ip_of_services_box>`. 
 
 
-### Builder Box configuration:
+### Nomad Client Configuration
 
 - **External Network Calls** - CircleCI uses `curl`  and `awscli` scripts to download initialization scripts, along with jars from Amazon S3. Both `curl` and `awscli` respect environment settings, but if you have whitelisted traffic from Amazon S3 you should not have any problems.
   
 - **Internal Network Calls** 
   - CircleCI JVM:  
-    - Any connections to other Builders or the Services machine should be excluded from HTTP proxy
+    - Any connections to other Nomad Clients or the Services machine should be excluded from HTTP proxy
     - Connections to GitHub Enterprise should be excluded from HTTP proxy
   - The following contains parts that may be impacted due to a proxy configuration:
       - Amazon EC2 metadata (http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-instance-metadata.html).  This **should not** be proxied.  If it is, then the machine will be misconfigured.
       - Amazon S3 traffic — note S3 discussion above
       - Amazon EC2 API - EC2 API traffic may need to be proxied.  You would note lots of failures (timeout failures) in logs if the proxy setting is misconfigured, but it will not block CircleCI from functioning.
 
-### Setup Builder Proxy Support
+### Nomad Client Proxy Setup
 
-If you are using AWS Terraform install you'll have to add the below to your builder's launch configuration. These instructions should be added to `/etc/environment`. If you are using Docker Builders, refer to the [Docker HTTP Proxy Instructions](https://docs.docker.com/engine/admin/systemd/#/http-proxy) documentation.
+If you are using AWS Terraform install you'll have to add the below to your Nomad client launch configuration. These instructions should be added to `/etc/environment`. If you are using Docker, refer to the [Docker HTTP Proxy Instructions](https://docs.docker.com/engine/admin/systemd/#/http-proxy) documentation.
 
 
 ```
 #!/bin/bash
 
-2.) (cat <<'EOF'
+# 1.) Set proxy to be read by any processes
+(cat <<'EOF'
 HTTP_PROXY=<proxy-ip:port>
 HTTPS_PROXY=<proxy-ip:port>
 NO_PROXY=169.254.169.254,<circleci-service-ip>,127.0.0.1,localhost,ghe.example.com
@@ -90,9 +94,9 @@ JVM_OPTS="-Dhttp.proxyHost=<ip> -Dhttp.proxyPort=<port> -Dhttps.proxyHost=<proxy
 EOF
 ) | sudo tee -a /etc/environment
 
+# 2.) Read the modified environment into current shell
 set -a
 . /etc/environment
-
 
 ```
 

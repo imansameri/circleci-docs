@@ -5,6 +5,7 @@ title: "Backing up CircleCI Data"
 category: [advanced-config]
 order: 8
 description: "How to regularly back up CircleCI Enterprise"
+sitemap: false
 ---
 
 This document describes how to back up your CircleCI Enterprise application so that you can recover from accidental or unexpected loss of CircleCI data attached to the Services machine:
@@ -50,5 +51,5 @@ If you want to clean up any abnormal build records in your database after a reco
 ```
 $ circleci dev-console
 # Wait for console to load
-user=> (admin/delete-build "https://my-circleci-hostname.com/gh/my-org/my-project/1234") 
+user=> (admin/delete-build "https://my-circleci-hostname.com/gh/your-org/my-project/1234") 
 ```

@@ -7,8 +7,6 @@ categories: [platforms]
 order: 40
 ---
 
-*[Docker, Machine, and iOS Builds]({{ site.baseurl }}/2.0/build/) > Setting Up Code Signing for iOS Projects*
-
 This document describes the guidelines for setting up code signing
 for your iOS or Mac project on CircleCI 2.0.
 
@@ -48,6 +46,7 @@ fastlane match adhoc` to generate and install the Ad-hoc distribution
 keys and profiles.
 
 ### Preparing Your Xcode Project for use With Fastlane Match
+{:.no_toc}
 
 Before setting up Match you must ensure that the code signing
 settings in your Xcode project are configured as follows:
@@ -63,6 +62,7 @@ In the target that you will be using for ad-hoc builds:
 *Match AdHoc* profile.
 
 ### Adding Match to the Fastlane Lane
+{:.no_toc}
 
 On CircleCI, Fastlane Match will need to be run every time you are
 going to generate an Ad-hoc build of your app. The easiest way to
@@ -94,6 +94,7 @@ end
 ```
 
 ### Adding a User key to the CircleCI Project
+{:.no_toc}
 
 To enable Fastlane Match to download the certificates and the keys
 from GitHub, it is necessary to add a user key with access to both the
@@ -105,6 +106,14 @@ Keys -> Add user key** and click *Authorize with GitHub*.
 same GitHub permissions as the user who will be clicking the *Authorize
 with GitHub* button.
 
+In your `Matchfile`, the `git_url` should be an **SSH** URL ( in the `git@github.com:...` format), rather than a **HTTPS** URL. Otherwise you may see authentication errors when you attempt to use match. For example:
+
+```
+git_url("git@github.com:fastlane/certificates")
+app_identifier("tools.fastlane.app")
+username("user@fastlane.tools")
+```
+
 It is best practice to create a machine user with access to just the
 project repo and the keys repo, and use that machine user to create a
 user key to reduce the level of GitHub access granted to the CircleCI project.
@@ -113,6 +122,7 @@ After you have added a user key, CircleCI will be able to checkout both the
 project repo and the code signing certificates / keys repo from GitHub.
 
 ### Adding the Match Passphrase to the Encrypted Environment Variables
+{:.no_toc}
 
 To enable Fastlane Match to decrypt the keys and profiles stored in
 the GitHub repo, it is necessary to add the encryption passphrase that
@@ -125,6 +135,7 @@ its value to your encryption passphrase. The passphrase will be stored
 encrypted at rest.
 
 ### Invoking the Fastlane Test Lane on CircleCI
+{:.no_toc}
 
 After you have configured Match and added its invocation into the Ad-hoc
 lane, you can run that lane on CircleCI. The following `config.yml` will
@@ -242,6 +253,8 @@ workflows:
             - build-and-test
 ```
 
+By setting the `FL_OUTPUT_DIR:` env, that will tell Fastlane to output the XCode and Fastlane logs to that directory, so they get uploaded as artifacts for ease in troubleshooting.
+
 ## Example Application on GitHub
 
 See the [`circleci-demo-ios` GitHub repository](https://github.com/CircleCI-Public/circleci-demo-ios)
@@ -249,5 +262,6 @@ for an example of how to configure code signing for iOS apps using
 Fastlane Match.
 
 ## See Also
+{:.no_toc}
 
 To read a blog post by Franz Busch at Sixt about their setup for CI with Fastlane and CircleCI, refer to the [Continuous integration and delivery with fastlane and CircleCI](https://medium.com/sixt-labs-techblog/continuous-integration-and-delivery-at-sixt-91ca215670a0) blog post on Medium.

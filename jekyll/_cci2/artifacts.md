@@ -1,13 +1,11 @@
 ---
 layout: classic-docs
-title: "Storing and Accessing Build Artifacts"
-short-title: "Storing and Accessing Build Artifacts"
+title: "Storing Build Artifacts"
+short-title: "Storing Build Artifacts"
 description: "Example of uploading artifacts created during a build"
 categories: [configuring-jobs]
 order: 70
 ---
-
-*[Basics]({{ site.baseurl }}/2.0/basics/) > Storing and Accessing Build Artifacts*
 
 This document describes how to work with Artifacts in the following sections:
 
@@ -34,7 +32,7 @@ deployment tarballs, CircleCI can automatically save and link them for you.
 ![artifacts tab screeshot]( {{ site.baseurl }}/assets/img/docs/artifacts.png)
 
 Find links to the artifacts at the top of the **Job page**.
-Artifacts are stored on Amazon S3.
+Artifacts are stored on Amazon S3 and are protected with your CircleCI account for private projects.
 There is a 3GB `curl` file size limit.
 Artifacts are designed
 to be useful around the time of the build.
@@ -161,9 +159,11 @@ for all variables that start with `:`.
 ```bash
 export CIRCLE_TOKEN=':your_token'
 
-curl https://circleci.com/api/v1.1/project/:vcs-type/:username/:project/:build_num/artifacts?circle-token=$CIRCLE_TOKEN | grep -o 'https://[^"]*' > artifacts.txt
-
-<artifacts.txt xargs -P4 -I % wget %?circle-token=$CIRCLE_TOKEN
+curl https://circleci.com/api/v1.1/project/:vcs-type/:username/:project/$build_number/artifacts?circle-token=$CIRCLE_TOKEN \
+   | grep -o 'https://[^"]*' \
+   | tr -d \" \
+   | sed -e "s/$/?circle-token=$CIRCLE_TOKEN/" \
+   | wget -v -i -
 ```
 
 Placeholder   | Meaning                                                                       |
@@ -176,6 +176,7 @@ Placeholder   | Meaning                                                         
 {: class="table table-striped"}
 
 ### Description of Commands
+{:.no_toc}
 
 First,
 the CIRCLE_TOKEN environment variable is created.
@@ -194,3 +195,9 @@ In the above example,
 `xargs` runs four processes
 to download artifacts in parallel.
 Adjust the number given to the `-P` flag as needed.
+
+
+## See Also
+{:.no_toc}
+
+[Caching Dependencies]({{ site.baseurl }}/2.0/caching/)

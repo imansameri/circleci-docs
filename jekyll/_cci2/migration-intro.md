@@ -10,6 +10,9 @@ order: 1
 
 Get started by reviewing tips and tricks for migration, learning about the config-translator, and getting specific tutorials for your platform.
 
+- [Migrating from Travis CI]({{ site.baseurl }}/2.0/migrating-from-travis/)
+- [Migrating from Jenkins]({{ site.baseurl }}/2.0/migrating-from-jenkins/)
+
 <hr>
 
 Config Intro | Scripts
@@ -24,8 +27,5 @@ Get an introduction to [migrating your iOS project]({{ site.baseurl }}/2.0/ios-m
 
 <hr>
 
-## Video: Migrating from CircleCI 1.0 to 2.0
-
-<iframe width="560" height="315" src="https://www.youtube.com/embed/_82nEV2E7E4" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-
+![CircleCI about image]( {{ site.baseurl }}/assets/img/docs/migrate.png)
 

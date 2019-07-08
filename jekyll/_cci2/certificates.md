@@ -7,13 +7,35 @@ categories: [administration]
 order: 55
 ---
 
-This document describes the process for using an ELB with HTTPS/SSL enabled.  You will need certificates for the ELB and CircleCI Server, covered in the following sections:
+This document provides a script for using a custom Root Certifcate Authority and the process for using an Elastic Load Balancing certificate in the following sections:  
 
 * TOC
 {:toc}
 
+
+## Using a Custom Root CA
+
+This section describes how to use a custom Root Certificate Authority (CA).
+
+Some installation environments use internal Root Certificate Authorities for encrypting and establishing trust between servers.  If you are using a Root certificate, you will need to import and mark it as a trusted certificate at CircleCI GitHub Enterprise instances. CircleCI will respect such trust when communicating with GitHub and webhook API calls.
+
+CA Certificates must be in a format understood by Java Keystore, and include the entire chain.
+
+The following script provides the necessary steps.
+
+```
+GHE_DOMAIN=github.example.com
+
+# Grab the CA chain from your GitHub Enterprise deployment.
+openssl s_client -connect ${GHE_DOMAIN}:443 -showcerts < /dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > /usr/local/share/ca-certificates/ghe.crt
+```
+
+Then, navigate to the system console at port 8800 and change the protocol to upgraded. You can change the protocol to "HTTPS (TLS/SSLEnabled)" setting and restart the services.  When trying "Test GitHub Authentication" you should get Success now rather than x509 related error.
+
+
 ## Setting up ELB Certificates
-CircleCI requires the following steps to get ELB (Elastic Load Balancing) certificates working as your primary certs. The steps to accomplish this are below.
+
+CircleCI requires the following steps to get ELB (Elastic Load Balancing) certificates working as your primary certs. The steps to accomplish this are below. You will need certificates for the ELB and CircleCI Server as described in the following sections. 
 
 **Note:** Opening the port for HTTP requests will allow CircleCI to return a HTTPS redirect.
 
@@ -39,12 +61,11 @@ SSH | TCP | 22 | 0.0.0.0
 HTTPS | TCP | 443 | 0.0.0.0
 Custom TCP Rule | TCP | 8800 | 0.0.0.0
 Custom TCP Rule | TCP | 64535-65535 | 0.0.0.0
-
 {: class="table table-striped"}
 
 3. Next, in the management console for CircleCI, upload a valid certificate and key file to the `Privacy` Section. These don't need to be externally signed or even current certs as the actual cert management is done at the ELB. But, to use HTTPS requests, CircleCI requires a certificate and key in which the "Common Name (FQDN)" matches the hostname configured in the admin console.
 
-4. It is now possible to set your Github Authorization Callback to `https` rather than `http`.  
+4. It is now possible to set your GitHub Authorization Callback to `https` rather than `http`.  
 
 ## Setting up TLS/HTTPS on CircleCI Server
 
@@ -90,7 +111,7 @@ Because the ELB does not require a _current_ certificate, you may choose to gene
 3. Save the certificate.pem and key.pem file locally.
 
 
-### Adding the certificate to CircleCI Server
+### Adding the certificate to CircleCI Server using Replicated Console
 
 Once you have a valid certificate and key file in pem format, you must upload it to CircleCI Server.
 
@@ -104,6 +125,41 @@ Once you have a valid certificate and key file in pem format, you must upload it
 
 5. Click "Save" at the bottom of the settings page and restart when prompted.
 
+### Adding the certificate to CircleCI Server from the Services machine
+
+This method may be used as an alternative to adding the certificate to CircleCI Server using the Replicated Console.
+
+1. Make sure your certificate and private key are accessible from the Services machine.
+
+2. SSH into the Services machine.
+
+3. Install the certificates using the following commands:
+
+```
+CERTIFICATE=~/example_certificate.pem
+PRIVATE_KEY=~/example_private_key.pem
+HOSTNAME=circleci-server.example.com
+
+# Update Replicated Console certificate
+replicated console cert set ${HOSTNAME} ${PRIVATE_KEY} ${CERTIFICATE}
+
+# Update CircleCI Server certificate
+replicatedctl app-config set 'ssl_cert' --value 'cert.pem' --data "$(cat ${CERTIFICATE} | base64)"
+replicatedctl app-config set 'ssl_private_key' --value 'private_key.pem' --data "$(cat ${PRIVATE_KEY} | base64)"
+```
+
+4. Restart Replicated Console
+
+```
+service replicated-ui restart
+```
+
+5. Restart CircleCI Server
+
+```
+service replicated restart
+```
+
 ## References
 
 Reference: https://letsencrypt.readthedocs.io/en/latest/using.html#manual
@@ -112,4 +168,4 @@ Reference: https://letsencrypt.readthedocs.io/en/latest/using.html#manual
 
 Ensure the hostname is properly configured in the Replicated/management console ~ (hostname:8800/settings) **and** that the hostname used matches the DNS records associated with the TLS certificates.
 
-Make sure the Auth Callback URL in Github/Github Enterprise matches the domain name pointing to the services box, including the protocol used, for example **https**://info-tech.io/.
+Make sure the Auth Callback URL in GitHub/GitHub Enterprise matches the domain name pointing to the services box, including the protocol used, for example **https**://info-tech.io/.

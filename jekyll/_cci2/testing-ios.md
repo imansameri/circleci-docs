@@ -7,26 +7,35 @@ description: Testing iOS applications on macOS
 order: 30
 ---
 
-*[Docker, Machine, and iOS Builds]({{ site.baseurl }}/2.0/build/) > Testing iOS Applications on macOS*
-
 This document describes how to set up and customize testing for an iOS application with CircleCI in the following sections:
 
 * TOC
 {:toc}
 
+**Note:** There is also documentation for [an iOS example project]({{ site.baseurl}}/2.0/ios-tutorial/) and [getting started on MacOS]({{ site.baseurl }}/2.0/hello-world-macos/).
+
 ## Overview
+{:.no_toc}
 
 CircleCI offers support for building and testing iOS and macOS projects. Refer to the manifest of the software installed on CircleCI macOS build images in the Using a macOS Build Image document.
+
+## macOS Build Containers
+
+Each `macos` job is run a fresh container, running macOS. We build a new container each time a new version of Xcode is released by Apple. The contents of a particular build container remain unchanged (in very exceptional circumstances we might be forced to re-build a container). Our goal is to keep your builds environement stable, and to allow you to opt-in to newer containers by setting the `xcode` key in your `config.yml` file.
+
+We announce the availability of new macOS containers in the [annoucements section of our Discuss site](https://discuss.circleci.com/c/announcements).
 
 ## Supported Xcode Versions
 
 The currently available Xcode versions are:
 
-* `10.0.0`: Xcode 10.0 (Build 10L221o) [installed software](https://circle-macos-docs.s3.amazonaws.com/image-manifest/build-440/index.html)
+* `11.0.0`: Xcode 11.0 (Beta 2) (Build 11M337n) [installed software](https://circle-macos-docs.s3.amazonaws.com/image-manifest/build-781/index.html)
+* `10.2.1`: Xcode 10.2.1 (Build 10E1001) [installed software]( https://circle-macos-docs.s3.amazonaws.com/image-manifest/build-594/index.html)
+* `10.2.0`: Xcode 10.2 (Build 10E125) [installed software]( https://circle-macos-docs.s3.amazonaws.com/image-manifest/build-534/index.html)
+* `10.1.0`: Xcode 10.1 (Build 10B61) [installed software](https://circle-macos-docs.s3.amazonaws.com/image-manifest/build-474/index.html)
+* `10.0.0`: Xcode 10.0 (Build 10A255) [installed software](https://circle-macos-docs.s3.amazonaws.com/image-manifest/build-456/index.html)
 * `9.4.1`: Xcode 9.4.1 (Build 9F2000) [installed software](https://circle-macos-docs.s3.amazonaws.com/image-manifest/build-430/index.html)
-* `9.4.0`: Xcode 9.4 (Build 9F1027a) [installed software](https://circle-macos-docs.s3.amazonaws.com/image-manifest/build-422/index.html)
 * `9.3.1`: Xcode 9.3.1 (Build 9E501) [installed software](https://circle-macos-docs.s3.amazonaws.com/image-manifest/build-419/index.html)
-* `9.3.0`: Xcode 9.3 (Build 9E145) [installed software](https://circle-macos-docs.s3.amazonaws.com/image-manifest/build-405/index.html)
 * `9.2.0`: Xcode 9.2.0 (Build 9C40b) [installed software](https://circle-macos-docs.s3.amazonaws.com/image-manifest/build-298/index.html)
 * `9.1.0`: Xcode 9.1.0 (Build 9B55) [installed software](https://circle-macos-docs.s3.amazonaws.com/image-manifest/build-290/index.html)
 * `9.0.1`: Xcode 9.0.1 (Build 9A1004) [installed software](https://circle-macos-docs.s3.amazonaws.com/image-manifest/build-282/index.html)
@@ -58,7 +67,8 @@ Simple projects should run with minimal configuration. You can find an
 example of a minimal config in the
 [iOS Project Tutorial]({{ site.baseurl }}/2.0/ios-tutorial/).
 
-# Best Practices
+### Best Practices
+{:.no_toc}
 
 In addition to the basic setup steps, it is best practice to include
 downloading CocoaPods specs from the CircleCI mirror (up to 70% faster)
@@ -70,11 +80,9 @@ version: 2
 jobs:
   build-and-test:
     macos:
-      xcode: "9.0"
-    working_directory: /Users/distiller/project
+      xcode: "10.2.0"
     environment:
       FL_OUTPUT_DIR: output
-
     steps:
       - checkout
       - run:
@@ -104,7 +112,7 @@ workflows:
       - build-and-test
 ```
 
-### Advanced Setup
+## Advanced Setup
 
 For advanced setup, it is possible to run a lint job together with your
 build and test job, and potentially also run tools like [Danger](https://github.com/danger/danger).
@@ -151,6 +159,7 @@ Fastlane on CircleCI as that allows for parity of build / deploy locally
 and on CircleCI, and simplifies the setup process.
 
 ### Adding a Gemfile
+{:.no_toc}
 
 It is recommended to add a `Gemfile` to your repository to make sure
 that the same version of Fastlane is used both locally and on CircleCI.
@@ -167,6 +176,7 @@ After you have created a `Gemfile` locally, you will need to run
 repository.
 
 ### Setting up Fastlane for use on CircleCI
+{:.no_toc}
 
 When using Fastlane in your CircleCI project, we recommend adding the
 following to your `Fastfile`:
@@ -193,6 +203,7 @@ new code signing certificates or provisioning profiles.
 * Set up log and test result paths to be easily collectible.
 
 ### Example Configuration for Using Fastlane on CircleCI
+{:.no_toc}
 
 A basic Fastlane configuration that can be used on CircleCI is as follows:
 
@@ -226,8 +237,7 @@ version: 2
 jobs:
   build-and-test:
     macos:
-      xcode: "9.0"
-    working_directory: /Users/distiller/project
+      xcode: "10.2.0"
     environment:
       FL_OUTPUT_DIR: output
       FASTLANE_LANE: test
@@ -245,8 +255,7 @@ jobs:
 
   adhoc:
     macos:
-      xcode: "9.0"
-    working_directory: /Users/distiller/project
+      xcode: "10.2.0"
     environment:
       FL_OUTPUT_DIR: output
       FASTLANE_LANE: adhoc
@@ -273,18 +282,23 @@ workflows:
             - build-and-test
 ```
 
-## Using CocoaPods
+The environment variable `FL_OUTPUT_DIR` is the artifact directory where FastLane logs should be stored. Use this to set the path in the `store_artifacts` step to automatically save logs such as Gym and Scan. 
+
+### Using CocoaPods
+{:.no_toc}
 
 If you are using CocoaPods, then we recommend that you
 check your [Pods directory into source control](http://guides.cocoapods.org/using/using-cocoapods.html#should-i-check-the-pods-directory-into-source-control).
 This will ensure that you have a deterministic, reproducible build.
 
-## Supported build and test tools
+## Supported Build and Test Tools
 
 In CircleCI 2.0 it is possible to customize your build
 as needed to satisfy almost any iOS build and test strategy.
 
 ### XCTest-based tools
+{:.no_toc}
+
 The following test tools are known to work well on CircleCI
 (though many others should work just fine):
 
@@ -293,10 +307,13 @@ The following test tools are known to work well on CircleCI
 * [KIF](https://github.com/kif-framework/KIF)
 
 ### Other Tools
+{:.no_toc}
+
 Popular iOS testing tools like [Appium](http://appium.io/) and [Frank](http://www.testingwithfrank.com/) should also
 work normally and are installed and called using `run` commands.
 
 ### Pre-Starting the Simulator
+{:.no_toc}
 
 Pre-start the iOS simulator before building your
 application to make sure that the simulator is booted in time.
@@ -322,12 +339,16 @@ image:
 * `iPhone 7 Plus (10.2) + Apple Watch Series 2 - 42mm (3.1) [<uuid>]` for the phone + watch pair.
 
 ### Creating a `config.yml` File
+{:.no_toc}
+
 The most flexible means to customize your build is to add a `.circleci/config.yml` file to your project,
 which allows you to run arbitrary bash commands
 at various points in the build process. See the [Configuring CircleCI]( {{ site.baseurl }}/2.0/configuration-reference/) document for
 a detailed discussion of the structure of the `config.yml` file. **Note:** A number of options in the document will not work for macOS builds.
 
 ### Installing Custom Packages
+{:.no_toc}
+
 [Homebrew](http://brew.sh/) is pre-installed on CircleCI, so you can simply use `brew install`
 to add nearly any dependency required in your build VM. Here's an example:
 
@@ -344,36 +365,36 @@ to add nearly any dependency required in your build VM. Here's an example:
 It is also possible to use the `sudo` command if necessary to perform customizations outside of Homebrew.
 
 
-## Custom Ruby Versions
+### Using Custom Ruby Versions
+{:.no_toc}
 
-The macOS container ships with the system-installed Ruby, as well as the
-latest stable versions of Ruby as provided by [Ruby-Lang.org](https://www.ruby-lang.org/en/downloads/).
-To allow you to manage custom versions of Ruby, we install
-[ruby-install](https://github.com/postmodern/ruby-install) and [chruby](https://github.com/postmodern/chruby).
-To select a custom version of ruby you should [create a file named
-`.ruby-version` and commit it to your
-repository, as documented by `chruby`](https://github.com/postmodern/chruby#auto-switching).
-You will also need to change the default shell that commands are executed with
-to be a login shell, so that `chruby` is correctly invoked.
+Our macOS containers contain multiple versions of Ruby. The default version is  the system-installed Ruby. The containers also include the latest stable versions of Ruby at the time that the container is built. We determine the stable versions of Ruby using the [Ruby-Lang.org downloads page](https://www.ruby-lang.org/en/downloads/). The version of Ruby that are  installed in each image are listed in the [software manifests of each container](#supported-xcode-versions).
+
+If you want to run steps with a version of Ruby that is listed as "available to chruby" in the manifest, then you can use [`chruby`](https://github.com/postmodern/chruby) to do so. To activate `chruby`, you **must** change the `shell` parameter of your job to be a login shell (adding `--login`).
 
 ```yaml
 version: 2
 jobs:
   build:
     macos:
-      xcode: "9.0"
+      xcode: "10.2.0"
     shell: /bin/bash --login -eo pipefail
 ```
 
-If you do not want to commit a `.ruby-version` file to source control, then
-you can create the file from a job step:
+ To specify a version of Ruby to use, there are two options. You can [create a file named `.ruby-version` and commit it to your repository, as documented by `chruby`](https://github.com/postmodern/chruby#auto-switching). If you do not want to commit a `.ruby-version` file to source control, then you can create the file from a job step:
+
 ```yaml
 run:
   name: Set Ruby Version
-  command:  echo "ruby-2.4" > ~/.ruby-version
+  command:  echo "ruby-2.4" > ~/.ruby-version # Replace 2.4 with the specific version of Ruby here.
 ```
 
+**Note:** The version of Ruby that you select must be one of the versions listed in the [software manifests of your macOS container](#supported-xcode-versions).
+
+To run a job with a version of Ruby that is not pre-installed, you must install the required version of Ruby. We use the [ruby-install](https://github.com/postmodern/ruby-install) tool to install the required version. After the install is complete, you can select it using the technique above.
+
 ### Using Custom Versions of CocoaPods and Other Ruby Gems
+{:.no_toc}
 
 To make sure the version of CocoaPods that you use locally is also used
 in your CircleCI builds, we suggest creating a Gemfile in your iOS
@@ -422,6 +443,7 @@ the app is easy with one of the following:
 Then you should set up environment variables for your service of choice:
 
 ### Hockey App 
+{:.no_toc}
 
 1. Log in to Hockey app and create a new API token on the [Tokens page](
 https://rink.hockeyapp.net/manage/auth_tokens). Your token will need at
@@ -439,6 +461,7 @@ the name `HOCKEY_APP_TOKEN` and paste the token as the value. You can now
 access this token in any job.
 
 ### Beta By Crashlytics
+{:.no_toc}
 
 1. Log in to Fabric.io and visit your organization's settings page.
 ![Fabric.io loging image](  {{ site.baseurl }}/assets/img/docs/fabric-org-settings-page.png)
@@ -452,6 +475,7 @@ Environment Variables add two new items named `CRASHLYTICS_API_KEY` and
 `CRASHLYTICS_SECRET`, with the values you find on Crashlytics website.
 
 ### TestFairy
+{:.no_toc}
 
 To set up your app on TestFairy, follow these steps:
 
@@ -499,13 +523,15 @@ workflows:
 For a complete list of available options, please visit the [TestFairy Upload API documentation](https://docs.testfairy.com/API/Upload_API.html)
 
 ## Resolving Common Simulator Issues
+{:.no_toc}
 
 A series of simulator-related issues are known to happen on some
 projects. Here are the most frequent of those:
 
 * **Xcode version is not available.** We install
   a few different versions of Xcode in each build
-  image and keep those updated with the latest point releases. Therefore
+  image and keep those updated with the latest point releases. For version `10.0.0`, 
+  you must specify the full version, down to the point release number. However,
   to use the latest Xcode 8.3, for example, which is `8.3.3`, it is
   sufficient to specify `8.3` in your `config.yml`. If a newer point
   release of 8.3 comes out, we will make that one available under the same
@@ -545,6 +571,7 @@ cases CircleCI may not correctly detect the Xcode workspace, project, or
 scheme. Instead, you can specify these through environment variables.
 
 ### Constraints on macOS-based Builds
+{:.no_toc}
 
 Splitting tests between parallel containers on macOS is currently not supported.
 We suggest using a workflow with parallel jobs to build with different
@@ -569,7 +596,7 @@ version: 2
 jobs:
   build-and-test:
     macos:
-      xcode: "9.0"
+      xcode: "10.2.0"
     working_directory: /Users/distiller/project
     environment:
       FL_OUTPUT_DIR: output
@@ -626,14 +653,17 @@ workflows:
 {% endraw %}
 
 ## React Native projects
+{:.no_toc}
 
 React Native projects can be built on CircleCI 2.0 using `macos` and
 `docker` executor types. Please check out [this example React Native
 application](https://github.com/CircleCI-Public/circleci-demo-react-native)
 on GitHub for a full example of a React Native project.
 
-## Example Application on GitHub
+## See Also
+{:.no_toc}
 
-See the [`circleci-demo-ios` GitHub repository](https://github.com/CircleCI-Public/circleci-demo-ios)
+- See the [`circleci-demo-ios` GitHub repository](https://github.com/CircleCI-Public/circleci-demo-ios)
 for a full example of how to build, test, sign and deploy an iOS project
 using Fastlane on CircleCI 2.0.
+- See the [iOS Project Tutorial]( {{ site.baseurl }}/2.0/ios-tutorial/) for a config walkthrough.

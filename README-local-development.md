@@ -1,16 +1,22 @@
+# Local Development Instructions
+
+
 There are two ways to work on CircleCI docs locally: with Docker and with Ruby/Bundler.
 
-# 1. Local Development with Docker (recommended)
+## 1. Local Development with Docker (recommended)
 
 1. Install Docker for you platform: <https://docs.docker.com/engine/installation/>
 2. Clone the CircleCI docs repo: `git clone https://github.com/circleci/circleci-docs.git`
+3. Download this file: https://circleci.com/docs/assets/app.bundle-576b5ac91166f5b87d5f6254b647c9182e3468eeea4717c8cdc7ff7304cac0c9.js
+4. Rename the file from Step 3 to `app.bundle.js` and save it in the `jekyll/assets/js` directory.
 3. `cd` into the directory where you cloned the docs
-4. run `docker-compose up`
+4. Run `docker-compose up`
 5. The docs site will now be running on <http://localhost:4000/docs/>
 
 **Note:** If you want to submit a pull request to update the docs, you'll need to [make a fork](https://github.com/circleci/circleci-docs#fork-destination-box) of this repo and clone your version in step 2 above. Then when you push your changes to your fork you can submit a pull request to us.
 
-# 2. Local Development with Ruby and Bundler (alternative to Docker)
+
+## 2. Local Development with Ruby and Bundler (alternative to Docker)
 
 If you already have a stable Ruby environment (currently Ruby 2.3.3) and feel comfortable installing dependencies, install Jekyll by following [this guide](https://jekyllrb.com/docs/installation/).
 
@@ -19,6 +25,17 @@ Check out the [Gemfile](Gemfile) for the Ruby version we're currently using. We 
 We also use a gem called [HTMLProofer](https://github.com/gjtorikian/html-proofer) to test links, images, and HTML. The docs site will need a passing build to be deployed, so use HTMLProofer to test everything before you push changes to GitHub.
 
 You're welcome to use [Bundler](http://bundler.io/) to install these gems.
+
+## Building js assets
+
+Our js assets are compiled by webpack and put into a place that the jekyll build can find them.
+
+Anytime you are working on js be sure to run:
+
+```bash
+$ npm install
+$ npm run webpack-watch
+```
 
 ## First Run
 
@@ -34,7 +51,7 @@ Jekyll will build the site and start a web server, which can be viewed in your b
 
 For more info on how to use Jekyll, check out [their docs](https://jekyllrb.com/docs/usage/).
 
-# Editing Docs Locally
+## Editing Docs Locally
 
 The docs site includes Bootstrap 3 JS and CSS, so you'll have access to all of its [reusable components](https://v4-alpha.getbootstrap.com/components/alerts/).
 
@@ -96,6 +113,59 @@ If you want to exclude a heading from a TOC, you can specify that with another r
 {:.no_toc}
 ```
 
-# Submitting Pull Requests
+## Submitting Pull Requests
 
 After you are finished with your changes, please follow our [Contributing Guide](CONTRIBUTING.md) to submit a pull request.
+
+## Docker Tag List for CircleCI Convenience Images
+
+The Docker tag list for convenience images, located in ./jekyll/_cci2/circleci-images.md, is dynamically updated during a CircleCI build.
+There's usually no need to touch this.
+If you'd like to see an updated list generated locally however, you can do so by running `./scripts/pull-docker-image-tags.sh` from the root of this repo.
+Note that you'll need the command-line tool [jq](https://stedolan.github.io/jq/) installed.
+
+## Updating the API Reference
+
+Our API is handled in two possible places currently:
+- [Old version](https://circleci.com/docs/api/v1-reference/) - This currently
+  accessible via the CircleCI landing page > Developers Dropdown > "Api"
+- [New Version using Slate](https://circleci.com/docs/api/#section=reference) -
+  A newer API guide, built with [Slate](https://github.com/lord/slate)
+  
+**What is Slate?**
+
+Slate is a tool for generating API documentation. Slate works by having a user
+clone or fork it's Github Repo, having the user fill in the API spec into a
+`index.html.md` file, and then generating the static documentation using Ruby
+(via `bundler`).
+
+**How do we use Slate?**
+
+We have cloned slate into our docs repo ("vendored" it) so that the whole
+project is available under `circleci-docs/src-api`. Because Slate is not a
+library, it is required that we vendor it and use its respective build
+steps to create our API documentation.
+
+**Making changes to the documentation**
+
+When it comes time to make changes to our API, start with the following:
+
+- All changes to the API happen in `circleci-docs/src-api/source/` folder.
+- Our API documentation is broken up into several documents in the `source/includes` folder. For example, all API requests related to `Projects` are found in the `circleci-docs/src-api/source/includes/_projects.md` file.
+- Within the `/source` folder, the `index.html.md` has an `includes` key in the front matter. The includes key gathers the separated files in the `includes` folder and merges them into a single file at build time.
+- Because Slate builds the entire API guide into a _single html_ file, we can view the artifact file on CircleCI whenever a build is run.
+
+The following is an example workflow to contribute to a document (from Github, no less):
+
+- Navigate to the file you want to edit (example: [`src-api/source/includes/_projects.md`](https://github.com/circleci/circleci-docs/blob/master/src-api/source/includes/_projects.md))
+- Click the `edit` button on GitHub and make your changes.
+- Commit your changes and submit a PR.
+- Go to the CircleCI web app, find the build for the latest commit for your PR
+- Go to the `Artifacts` tab and navigate to `circleci-docs/api/index.html` to view the built file.
+
+**Local Development with Slate**
+
+- If you want to see your changes live before committing them, `cd` into
+  `src-api` and run `bundle install` followed by `bundle exec middleman server`.
+- You may need a specific version of Ruby for bundler to work (2.3.1).
+ 

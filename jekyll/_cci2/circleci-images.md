@@ -6,7 +6,6 @@ description: "Listing of available images maintained by CircleCI"
 categories: [containerization]
 order: 20
 ---
-*[Reference]({{ site.baseurl }}/2.0/reference/) > Pre-Built CircleCI Docker Images*
 
 This document provides information about pre-built CircleCI images and a listing by language, service type, and tags in the following sections:
 
@@ -14,30 +13,21 @@ This document provides information about pre-built CircleCI images and a listing
 {:toc}
 
 ## Overview
+{:.no_toc}
 
 For convenience,
 CircleCI maintains several Docker images.
-These images are extensions of official Docker images
+These images are typically extensions of official Docker images
 and include tools especially useful for CI/CD.
-All of these pre-built images are available in the [CircleCI org on Docker Hub](https://hub.docker.com/r/circleci/).
+All of these pre-built images are available in the [CircleCI org on Docker Hub](https://hub.docker.com/search?q=circleci&type=image).
 Visit the `circleci-images` GitHub repo for the [source code for the CircleCI Docker images](https://github.com/circleci/circleci-images).
 Visit the `circleci-dockerfiles` GitHub repo for the [Dockerfiles for the CircleCI Docker images](https://github.com/circleci-public/circleci-dockerfiles).
 
-For a brief overview,
-watch the video below.
-
-<div class="video-wrapper">
-    <iframe width="560" height="315" src="https://www.youtube.com/embed/PgIwBzXBn7M" frameborder="0" allowfullscreen></iframe>
-</div>
+_**Note:** CircleCI occasionally makes scheduled changes to images to fix bugs or otherwise improve functionality, and these changes can sometimes cause affect how images work in CircleCI jobs. Please follow the [**convenience-images** tag on Discuss](https://discuss.circleci.com/tags/convenience-images) to be notified in advance of scheduled maintenance._
 
 ## Best Practices
 
-Convenience images are based on the most recently built versions of upstream images,
-so it is best practice
-to use the most specific image possible.
-This makes your builds more deterministic
-by preventing an upstream image
-from introducing unintended changes to your image.
+Convenience images are based on the most recently built versions of upstream images, so it is best practice to use the most specific image possible. This makes your builds more deterministic by preventing an upstream image from introducing unintended changes to your image.
 
 CircleCI bases pre-built images off of upstream, for example, `circleci/ruby:2.4-node` is based off the most up to date version of the Ruby 2.4-node container. Using `circleci/ruby:2.4-node` is similar to using `:latest`. It is best practice to lock down aspects of your build container by specifying an additional tag to pin down the image in your configuration.
 
@@ -55,7 +45,30 @@ to pin an image to a version or operating system (OS).
 - Use a Docker image ID
 to pin an image to a fixed version.
 
+**NOTE:** For Node.js variant Docker images (tags that end in `-node`) the LTS release of Node.js is pre-installed. If you would like to include your own specific version of
+Node.js / NPM you can set it up in a series of `run` steps in your `.circleci/config.yml`. Consider the example below, which installs a specific version of Node.js
+alongside the Ruby image.
+
+```yaml
+version: 2.0
+jobs:
+  build:
+    docker:
+      - image: circleci/ruby:2.4.2-jessie-node
+    steps:
+      - checkout
+      - run:
+          name: "Update Node.js and npm"
+          command: |
+            curl -sSL "https://nodejs.org/dist/v11.10.0/node-v11.10.0-linux-x64.tar.xz" | sudo tar --strip-components=2 -xJ -C /usr/local/bin/ node-v11.10.0-linux-x64/bin/node
+            curl https://www.npmjs.com/install.sh | sudo bash
+      - run:
+          name: Check current version of node
+          command: node -v
+```
+
 ### Using an Image Tag to Pin an Image Version or OS
+{:.no_toc}
 
 You can pin aspects of a Docker image
 by adding an [image tag](https://docs.docker.com/engine/reference/commandline/tag/#extended-description).
@@ -80,6 +93,7 @@ it is best practice
 to add an explicit image tag.
 
 ### Using a Docker Image ID to Pin an Image to a Fixed Version
+{:.no_toc}
 
 Every Docker image has a [unique ID](https://docs.docker.com/engine/reference/commandline/pull/#pull-an-image-by-digest-immutable-identifier).
 You can use this image ID
@@ -93,6 +107,7 @@ sha256:df1808e61a9c32d0ec110960fed213ab2339451ca88941e9be01a03adc98396e
 ```
 
 #### Finding an Image ID
+{:.no_toc}
 
 1. In the CircleCI application,
 go to a past build
@@ -120,6 +135,7 @@ it is [best practice](#best-practices)
 to use a more specific tag.
 
 ### Language Images
+{:.no_toc}
 
 Language images are convenience images for common programming languages.
 These images include both the relevant language and [commonly-used tools](#pre-installed-tools).
@@ -138,20 +154,24 @@ CircleCI maintains images for the languages below.
 - [PHP](#php)
 - [Python](#python)
 - [Ruby](#ruby)
+- [Rust](#rust)
 
 If your language is not listed,
 CircleCI also maintains a [Dockerfile Wizard](https://github.com/circleci-public/dockerfile-wizard)
 you can use to create a custom image.
 
 #### Language Image Variants
+{:.no_toc}
 
 CircleCI maintains several variants for language images.
 To use these variants,
 add one of the following suffixes to the end of an image tag.
 
 - `-node` includes Node.js for polyglot applications
-- `-browsers` includes Chrome, Firefox, Java 8, and PhantomJS
+- `-browsers` includes Chrome, Firefox, Java 8, and Geckodriver
+- `-browsers-legacy` includes Chrome, Firefox, Java 8, and PhantomJS
 - `-node-browsers` combines the `-node` and `-browsers` variants
+- `-node-browsers-legacy` combines the `-node` and `-browsers-legacy` variants
 
 For example,
 if you want
@@ -159,6 +179,7 @@ to add browsers to the `circleci/golang:1.9` image,
 use the `circleci/golang:1.9-browsers` image.
 
 ### Service Images
+{:.no_toc}
 
 Service images are convenience images for services like databases.
 These images should be listed **after** language images
@@ -167,12 +188,15 @@ so they become secondary service containers.
 CircleCI maintains images for the services below.
 
 - [buildpack-deps](#buildpack-deps)
+- [DynamoDB](#dynamodb)
 - [MariaDB](#mariadb)
 - [MongoDB](#mongodb)
 - [MySQL](#mysql)
 - [PostgreSQL](#postgresql)
+- [Redis](#redis)
 
 #### Service Image Variant
+{:.no_toc}
 
 CircleCI maintains only one variant for service images.
 To speed up builds
@@ -188,26 +212,37 @@ use the `circleci/postgres:9.5-postgis-ram` image.
 
 All convenience images have been extended with additional tools.
 
-The following packages are installed via `apt-get` on every image.
+With the exception of [Android images](https://hub.docker.com/r/circleci/android),
+all images include the following packages, installed via `apt-get`:
 
-- [bzip2](https://packages.debian.org/stretch/bzip2)
-- [ca-certificates](https://packages.debian.org/stretch/ca-certificates)
-- [curl](https://packages.debian.org/stretch/curl)
-- [git](https://packages.debian.org/stretch/git)
-- [gnupg](https://packages.debian.org/stretch/gnupg)
-- [gzip](https://packages.debian.org/stretch/gzip)
-- [locales](https://packages.debian.org/stretch/locales)
-- [mercurial](https://packages.debian.org/stretch/mercurial)
-- [net-tools](https://packages.debian.org/stretch/net-tools)
-- [netcat](https://packages.debian.org/stretch/netcat)
-- [openssh-client](https://packages.debian.org/stretch/openssh-client)
-- [parallel](https://packages.debian.org/stretch/parallel)
-- [sudo](https://packages.debian.org/stretch/sudo)
-- [tar](https://packages.debian.org/stretch/tar)
-- [unzip](https://packages.debian.org/stretch/unzip)
-- [wget](https://packages.debian.org/stretch/wget)
-- [xvfb](https://packages.debian.org/stretch/xvfb)
-- [zip](https://packages.debian.org/stretch/zip)
+- `bzip2`
+- `ca-certificates`
+- `curl`
+- `git`
+- `gnupg`
+- `gzip`
+- `locales`
+- `mercurial`
+- `net-tools`
+- `netcat`
+- `openssh-client`
+- `parallel`
+- `sudo`
+- `tar`
+- `unzip`
+- `wget`
+- `xvfb`
+- `zip`
+
+The specific version of a particular package
+that gets installed in a particular CircleCI image variant
+depends on the default version included in the package directory
+for the Linux distribution/version installed in that variant's base image.
+Most CircleCI convenience images are [Debian Jessie](https://packages.debian.org/jessie/)-
+or [Stretch](https://packages.debian.org/stretch/)-based images,
+however some extend [Ubuntu](https://packages.ubuntu.com)-based images.
+For details on individual variants of CircleCI images, see the
+[circleci-dockerfiles](https://github.com/circleci-public/circleci-dockerfiles) repository.
 
 The following packages are installed via `curl` or other means.
 
@@ -235,23 +270,38 @@ that a given tag has the same meaning across images!
 ### {{ image[1].name }}
 {:.no_toc}
 
+**Resources:**
+
+- [DockerHub](https://hub.docker.com/r/circleci/{{ image[0] }}) - where this image is hosted as well as some useful instructions.
+- [Dockerfiles](https://github.com/CircleCI-Public/circleci-dockerfiles/tree/master/{{ image[0] }}/images) - the Dockerfiles this image was built from.
+
 **Usage:** Add the following under `docker:` in your config.yml:  
 
 `- image: circleci/{{ image[0] }}:[TAG]`
 
-**Latest Tags:** <small>(view more available tags on [Docker Hub](https://hub.docker.com/r/circleci/{{ image[0] }}/tags/))</small>
+**Recent Tags:** <small>(View all available image tags [here]({{ site.baseurl }}/2.0/docker-image-tags.json){:target="_blank"})</small>
 
-<ul class="list-2cols">
-{% assign tags = image[1].tags | sort %}
+<ul class="list-3cols">
+{% assign tags = image[1].tags | sort | reverse %}
+{% assign tagCounter = 1 %}
 {% for tag in tags %}
-<li>{{ tag }}</li>
+	{% if tagCounter > 99 %}
+		{% break %}
+	{% endif %}
+	{% unless tag contains "-browsers" or tag contains "-node" or tag contains "-ram" %}
+	<li>{{ tag }}</li>
+	{% assign tagCounter = tagCounter | plus:1 %}
+	{% endunless %}
 {% endfor %}
 </ul>
+
+Note: Any variants available for this image can be used by appending the variant tag to the tags above. View all available image tags [here]({{ site.baseurl }}/2.0/docker-image-tags.json){:target="_blank"}.
 
 ---
 
 {% endfor %}
 
 ## See Also
+{:.no_toc}
 
 See [Using Private Images]({{ site.baseurl }}/2.0/private-images/) for information about how to authorize your build to use an image in a private repository or in Amazon ECR.

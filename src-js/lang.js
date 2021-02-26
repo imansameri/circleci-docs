@@ -9,8 +9,8 @@ function getElById(id) {
 }
 
 var languages = {
-  "en": {name: "English", url: "docs/2.0/"},
-  "ja": {name: "日本語", url: "docs/ja/2.0/"}
+  "en": {name: "English", url: "docs/"},
+  "ja": {name: "日本語", url: "docs/ja/"}
 }
 
 // List of elements that have dynamic content based on our selected language
@@ -22,7 +22,9 @@ var els = {
 };
 
 function reloadWithNewLocale(langCode) {
-  window.location.href = "https://circleci.com/" + languages[langCode].url
+  const parser = new RegExp('^(https?:\/\/circleci.com\/)(docs\/[a-z]{2}\/|docs\/)(.*)', 's')
+  let selectedLanguageURL = window.location.href.replace(parser, '$1' + languages[langCode].url + '$3')
+  window.location.href = selectedLanguageURL
 }
 
 // Sets the sidebar language picker to the currently selected language

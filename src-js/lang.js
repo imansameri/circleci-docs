@@ -22,7 +22,7 @@ var els = {
 };
 
 function reloadWithNewLocale(langCode) {
-  const parser = new RegExp('^(https?:\/\/circleci.com\/)(docs\/[a-z]{2}\/|docs\/)(.*)', 's')
+  const parser = new RegExp('^(https?:\/\/' + window.location.host + '\/)(docs\/[a-z]{2}\/|docs\/)(.*)', 's')
   let selectedLanguageURL = window.location.href.replace(parser, '$1' + languages[langCode].url + '$3')
   window.location.href = selectedLanguageURL
 }
